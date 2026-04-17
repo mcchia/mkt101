@@ -12,6 +12,7 @@ import streamlit as st
 from config import get_api_key, redact
 from services import brand_memory, content_history, losing_posts, patterns
 from tea_assistant import MODEL, SYSTEM_PROMPT
+from ui import styling
 
 
 def _build_extra_system() -> str:
@@ -24,12 +25,25 @@ def _build_extra_system() -> str:
     return "\n\n".join(b for b in blocks if b)
 
 
+def _context_summary() -> list[tuple[str, str]]:
+    bm = brand_memory.load_editable()
+    ch_count = len(content_history.list_records())
+    return [
+        ("Brand memory", "configured" if not bm.is_empty() else "empty"),
+        ("Content history", f"{ch_count} record{'s' if ch_count != 1 else ''}"),
+        ("Patterns", "loaded" if patterns.last_saved_summary() else "not yet extracted"),
+    ]
+
+
 def render() -> None:
-    st.title("Assistant")
-    st.caption(
-        "Paste recent post metrics and a goal. The assistant will clarify, "
-        "analyze, and produce execution-ready output. Brand memory and content "
-        "history feed automatically into every turn."
+    styling.page_header(
+        "Assistant",
+        subtitle=(
+            "Paste post metrics and a goal. The assistant clarifies, analyzes, "
+            "and produces execution-ready output. Brand memory and content "
+            "history feed every turn automatically."
+        ),
+        eyebrow="Workspace",
     )
 
     try:
@@ -44,22 +58,42 @@ def render() -> None:
         st.session_state.usage = None
 
     with st.sidebar:
-        st.subheader("Session")
+        styling.section("Session")
         if st.button("Reset conversation", use_container_width=True):
             st.session_state.messages = []
             st.session_state.usage = None
             st.rerun()
-        st.caption(f"Turns: {len(st.session_state.messages) // 2}")
+        turns = len(st.session_state.messages) // 2
+        st.caption(f"{turns} turn{'s' if turns != 1 else ''}")
+
+        styling.section("Context in use")
+        for label, value in _context_summary():
+            st.markdown(
+                f"<div style='display:flex;justify-content:space-between;"
+                f"padding:0.2rem 0;font-size:0.85rem;'>"
+                f"<span style='color:var(--tea-muted);'>{label}</span>"
+                f"<span style='color:var(--tea-ink);'>{value}</span></div>",
+                unsafe_allow_html=True,
+            )
+
         if st.session_state.usage:
             u = st.session_state.usage
-            st.divider()
-            st.subheader("Last turn tokens")
-            st.text(
-                f"in:          {u['in']}\n"
-                f"out:         {u['out']}\n"
-                f"cache_read:  {u['cache_read']}\n"
-                f"cache_write: {u['cache_write']}"
+            styling.section("Last turn tokens")
+            st.markdown(
+                f"<div style='font-size:0.82rem;color:var(--tea-muted);line-height:1.7;'>"
+                f"input <span style='float:right;color:var(--tea-ink);'>{u['in']}</span><br>"
+                f"output <span style='float:right;color:var(--tea-ink);'>{u['out']}</span><br>"
+                f"cache read <span style='float:right;color:var(--tea-ink);'>{u['cache_read']}</span><br>"
+                f"cache write <span style='float:right;color:var(--tea-ink);'>{u['cache_write']}</span>"
+                f"</div>",
+                unsafe_allow_html=True,
             )
+
+    if not st.session_state.messages:
+        styling.empty_state(
+            "Start a conversation",
+            "Share recent post metrics, a goal, and any context. Ask for a weekly read, a campaign kickoff, or a product launch plan.",
+        )
 
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):

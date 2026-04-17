@@ -14,6 +14,7 @@ from __future__ import annotations
 import streamlit as st
 
 from services import scheduler
+from ui import styling
 from ui.pages import (
     ab_testing_page,
     brand_memory_page,
@@ -27,17 +28,39 @@ from ui.pages import (
     templates_page,
 )
 
-st.set_page_config(page_title="Tea Marketing Assistant", layout="wide")
+st.set_page_config(
+    page_title="Tea Marketing Assistant",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+styling.apply_theme()
+
+
+def _sidebar_brand() -> None:
+    with st.sidebar:
+        st.markdown(
+            """
+            <div style="padding: 0.25rem 0 1rem 0; border-bottom: 1px solid var(--tea-line); margin-bottom: 1rem;">
+                <div style="font-family: var(--tea-serif); font-size: 1.15rem; color: var(--tea-ink); font-weight: 600; letter-spacing: -0.005em;">
+                    Tea Marketing
+                </div>
+                <div style="font-size: 0.78rem; color: var(--tea-muted); letter-spacing: 0.04em; text-transform: uppercase;">
+                    Operations workspace
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
 
 def _sched_banner() -> None:
     try:
         cfg = scheduler.load_config()
         if scheduler.is_due(cfg):
-            st.warning(
+            st.info(
                 "Scheduled sync is due. Open **Sync Scheduler** and click "
                 "**Run now**, or run `python -m scripts.run_sync` from cron.",
-                icon=":material/schedule:" if hasattr(st, "badge") else None,
+                icon=":material/schedule:",
             )
     except Exception:
         pass
@@ -47,23 +70,25 @@ def _page(fn, title: str, icon: str | None = None):
     return st.Page(fn, title=title, icon=icon)
 
 
+_sidebar_brand()
+
 nav = st.navigation(
     {
         "Workspace": [
-            _page(chat.render, "Assistant"),
-            _page(templates_page.render, "Templates"),
-            _page(seasonal_page.render, "Seasonal Planner"),
-            _page(ab_testing_page.render, "A/B Testing"),
+            _page(chat.render, "Assistant", icon=":material/auto_awesome:"),
+            _page(templates_page.render, "Templates", icon=":material/dashboard_customize:"),
+            _page(seasonal_page.render, "Seasonal Planner", icon=":material/calendar_month:"),
+            _page(ab_testing_page.render, "A/B Testing", icon=":material/compare_arrows:"),
         ],
         "Knowledge": [
-            _page(brand_memory_page.render, "Brand Memory"),
-            _page(content_history_page.render, "Content History"),
-            _page(patterns_page.render, "Patterns & Losing Posts"),
+            _page(brand_memory_page.render, "Brand Memory", icon=":material/bookmark:"),
+            _page(content_history_page.render, "Content History", icon=":material/history:"),
+            _page(patterns_page.render, "Patterns & Losing Posts", icon=":material/insights:"),
         ],
         "Protection & ops": [
-            _page(brand_protection_page.render, "Brand Protection"),
-            _page(competitor_watch_page.render, "Competitor Watch"),
-            _page(scheduler_page.render, "Sync Scheduler"),
+            _page(brand_protection_page.render, "Brand Protection", icon=":material/shield:"),
+            _page(competitor_watch_page.render, "Competitor Watch", icon=":material/visibility:"),
+            _page(scheduler_page.render, "Sync Scheduler", icon=":material/schedule:"),
         ],
     }
 )
