@@ -1,7 +1,8 @@
 """AI Marketing Assistant CLI for a middle-to-high-end tea brand.
 
 Usage:
-    export ANTHROPIC_API_KEY=sk-ant-...
+    # Set ANTHROPIC_API_KEY via your environment, a local .env file, or
+    # .streamlit/secrets.toml. Never hardcode or commit the key.
     python tea_assistant.py
 
 Submit a single-line message with Enter.
@@ -10,11 +11,12 @@ content, then END on its own line.
 Type :reset to clear conversation history. :quit to exit.
 """
 
-import os
 import sys
 from typing import List
 
 import anthropic
+
+from config import get_api_key, redact
 
 SYSTEM_PROMPT = """You are being evaluated for the role of AI Marketing Assistant for a new online shop that sells middle- to high-end tea products.
 
@@ -254,11 +256,13 @@ def stream_response(client: anthropic.Anthropic, messages: list) -> str:
 
 
 def main() -> None:
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        print("error: set ANTHROPIC_API_KEY before running.", file=sys.stderr)
+    try:
+        api_key = get_api_key()
+    except RuntimeError as e:
+        print(f"error: {e}", file=sys.stderr)
         sys.exit(1)
 
-    client = anthropic.Anthropic()
+    client = anthropic.Anthropic(api_key=api_key)
     messages: list = []
 
     print("AI Marketing Assistant — tea brand")
@@ -280,7 +284,11 @@ def main() -> None:
         try:
             assistant_text = stream_response(client, messages)
         except anthropic.APIError as e:
-            print(f"\nAPI error: {e}", file=sys.stderr)
+            print(f"\nAPI error: {redact(e)}", file=sys.stderr)
+            messages.pop()
+            continue
+        except Exception as e:
+            print(f"\nUnexpected error: {redact(e)}", file=sys.stderr)
             messages.pop()
             continue
 
