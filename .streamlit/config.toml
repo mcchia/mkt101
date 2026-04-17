@@ -1,0 +1,20 @@
+# Streamlit theme for the tea marketing assistant.
+# Restrained, tea-inspired palette. Body stays in a humanist sans for
+# readability; headings are promoted to a system serif via ui/styling.py.
+
+[theme]
+base = "light"
+primaryColor = "#2F4A3A"
+backgroundColor = "#FAF8F3"
+secondaryBackgroundColor = "#F2EEE5"
+textColor = "#1E2A24"
+font = "sans serif"
+
+[client]
+toolbarMode = "minimal"
+# Keep raw framework tracebacks out of the UI. The app's own error paths
+# already surface messages via config.redact().
+showErrorDetails = false
+
+[browser]
+gatherUsageStats = false
