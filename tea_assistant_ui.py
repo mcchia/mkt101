@@ -1,98 +1,72 @@
 """Streamlit UI for the tea brand AI marketing assistant.
 
+Multipage app. Each feature lives under `ui/pages/`. Legacy single-page chat
+behavior is preserved by the "Assistant" page.
+
 Usage:
     # Set ANTHROPIC_API_KEY via your environment, a local .env file, or
     # .streamlit/secrets.toml. Never hardcode or commit the key.
     streamlit run tea_assistant_ui.py
 """
 
-import anthropic
+from __future__ import annotations
+
 import streamlit as st
 
-from config import get_api_key, redact
-from tea_assistant import MODEL, SYSTEM_PROMPT
+from services import scheduler
+from ui.pages import (
+    ab_testing_page,
+    brand_memory_page,
+    brand_protection_page,
+    chat,
+    competitor_watch_page,
+    content_history_page,
+    patterns_page,
+    scheduler_page,
+    seasonal_page,
+    templates_page,
+)
 
 st.set_page_config(page_title="Tea Marketing Assistant", layout="wide")
-st.title("AI Marketing Assistant — tea brand")
-st.caption("Paste recent post metrics and a goal. The assistant will clarify, analyze, and produce execution-ready output.")
 
-try:
-    api_key = get_api_key()
-except RuntimeError as e:
-    # Error message from config.get_api_key() never contains the key.
-    st.error(str(e))
-    st.stop()
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-if "usage" not in st.session_state:
-    st.session_state.usage = None
-
-with st.sidebar:
-    st.subheader("Session")
-    if st.button("Reset conversation", use_container_width=True):
-        st.session_state.messages = []
-        st.session_state.usage = None
-        st.rerun()
-    st.caption(f"Turns: {len(st.session_state.messages) // 2}")
-    if st.session_state.usage:
-        u = st.session_state.usage
-        st.divider()
-        st.subheader("Last turn tokens")
-        st.text(
-            f"in:          {u['in']}\n"
-            f"out:         {u['out']}\n"
-            f"cache_read:  {u['cache_read']}\n"
-            f"cache_write: {u['cache_write']}"
-        )
-
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
-
-prompt = st.chat_input("Message (Shift+Enter for new line)")
-if prompt:
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    client = anthropic.Anthropic(api_key=api_key)
-
-    def stream_text():
-        with client.messages.stream(
-            model=MODEL,
-            max_tokens=64000,
-            system=[
-                {
-                    "type": "text",
-                    "text": SYSTEM_PROMPT,
-                    "cache_control": {"type": "ephemeral"},
-                }
-            ],
-            thinking={"type": "adaptive"},
-            output_config={"effort": "high"},
-            messages=st.session_state.messages,
-        ) as stream:
-            for event in stream:
-                if event.type == "content_block_delta" and event.delta.type == "text_delta":
-                    yield event.delta.text
-            final = stream.get_final_message()
-        usage = final.usage
-        st.session_state.usage = {
-            "in": usage.input_tokens,
-            "out": usage.output_tokens,
-            "cache_read": getattr(usage, "cache_read_input_tokens", 0) or 0,
-            "cache_write": getattr(usage, "cache_creation_input_tokens", 0) or 0,
-        }
-
+def _sched_banner() -> None:
     try:
-        with st.chat_message("assistant"):
-            full_text = st.write_stream(stream_text)
-        st.session_state.messages.append({"role": "assistant", "content": full_text})
-        st.rerun()
-    except anthropic.APIError as e:
-        st.session_state.messages.pop()
-        st.error(f"API error: {redact(e)}")
-    except Exception as e:
-        st.session_state.messages.pop()
-        st.error(f"Unexpected error: {redact(e)}")
+        cfg = scheduler.load_config()
+        if scheduler.is_due(cfg):
+            st.warning(
+                "Scheduled sync is due. Open **Sync Scheduler** and click "
+                "**Run now**, or run `python -m scripts.run_sync` from cron.",
+                icon=":material/schedule:" if hasattr(st, "badge") else None,
+            )
+    except Exception:
+        pass
+
+
+def _page(fn, title: str, icon: str | None = None):
+    return st.Page(fn, title=title, icon=icon)
+
+
+nav = st.navigation(
+    {
+        "Workspace": [
+            _page(chat.render, "Assistant"),
+            _page(templates_page.render, "Templates"),
+            _page(seasonal_page.render, "Seasonal Planner"),
+            _page(ab_testing_page.render, "A/B Testing"),
+        ],
+        "Knowledge": [
+            _page(brand_memory_page.render, "Brand Memory"),
+            _page(content_history_page.render, "Content History"),
+            _page(patterns_page.render, "Patterns & Losing Posts"),
+        ],
+        "Protection & ops": [
+            _page(brand_protection_page.render, "Brand Protection"),
+            _page(competitor_watch_page.render, "Competitor Watch"),
+            _page(scheduler_page.render, "Sync Scheduler"),
+        ],
+    }
+)
+
+_sched_banner()
+nav.run()
