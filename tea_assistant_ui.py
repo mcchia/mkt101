@@ -1,23 +1,26 @@
 """Streamlit UI for the tea brand AI marketing assistant.
 
 Usage:
-    export ANTHROPIC_API_KEY=sk-ant-...
+    # Set ANTHROPIC_API_KEY via your environment, a local .env file, or
+    # .streamlit/secrets.toml. Never hardcode or commit the key.
     streamlit run tea_assistant_ui.py
 """
-
-import os
 
 import anthropic
 import streamlit as st
 
+from config import get_api_key, redact
 from tea_assistant import MODEL, SYSTEM_PROMPT
 
 st.set_page_config(page_title="Tea Marketing Assistant", layout="wide")
 st.title("AI Marketing Assistant — tea brand")
 st.caption("Paste recent post metrics and a goal. The assistant will clarify, analyze, and produce execution-ready output.")
 
-if not os.environ.get("ANTHROPIC_API_KEY"):
-    st.error("Set ANTHROPIC_API_KEY before running.")
+try:
+    api_key = get_api_key()
+except RuntimeError as e:
+    # Error message from config.get_api_key() never contains the key.
+    st.error(str(e))
     st.stop()
 
 if "messages" not in st.session_state:
@@ -53,7 +56,7 @@ if prompt:
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    client = anthropic.Anthropic()
+    client = anthropic.Anthropic(api_key=api_key)
 
     def stream_text():
         with client.messages.stream(
@@ -89,4 +92,7 @@ if prompt:
         st.rerun()
     except anthropic.APIError as e:
         st.session_state.messages.pop()
-        st.error(f"API error: {e}")
+        st.error(f"API error: {redact(e)}")
+    except Exception as e:
+        st.session_state.messages.pop()
+        st.error(f"Unexpected error: {redact(e)}")
