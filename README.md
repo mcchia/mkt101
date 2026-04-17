@@ -74,7 +74,33 @@ Git history is effectively public once pushed. Do the following, in order:
 
 ## Web UI
 
-`streamlit run tea_assistant_ui.py` opens a chat interface in the browser. Paste multi-line content directly into the message box (Shift+Enter for a new line). The sidebar shows turn count, per-turn token usage, and a reset button.
+`streamlit run tea_assistant_ui.py` opens a multipage app in the browser. Pages:
+
+- **Assistant** — the original chat (analyze → ideate → critique → top 3 → execute). Automatically consumes brand memory, recent content history, and winning/losing patterns.
+- **Templates** — one-click workflows (weekly analysis, monthly review, campaign kickoff, product launch, gifting season). Custom templates can be saved.
+- **Seasonal Planner** — calendar-aware plans for Tet, Mid-Autumn, corporate gifting, holiday gift boxes, and wellness windows.
+- **A/B Testing** — generate two on-brand variants for a selected concept along a named dimension (hook / caption / format / CTA).
+- **Brand Memory** — editable truth (tone, audience, pillars, guardrails, banned phrases, CTA style, positioning notes, constraints) separate from inferred suggestions.
+- **Content History** — track hook / angle / format / CTA / pillar across posts, with CSV bulk import and fatigue detection.
+- **Patterns & Losing Posts** — extract winning and losing patterns by metric (reach, likes, saves, comments, clicks, orders, or a weighted score), with strong- vs thin-evidence separation and stop/reduce/retest recommendations.
+- **Brand Protection** — rule-based + optional LLM checker with a transparent score, category, severity, excerpt, and reason per flag.
+- **Competitor Watch** — manual-first competitor records, optional conservative public-URL fetch, and whitespace-oriented insights that do not copy competitor content.
+- **Sync Scheduler** — configure a daily sync (enable flag, time of day, sources) with last/next-run indicators. A standalone runner `python -m scripts.run_sync` can be driven by cron for true automation.
+
+## Local state
+
+All app state (brand memory, content history, A/B plans, competitors, seasonal plans, templates, protection logs, scheduler settings/history) persists as JSON in `./data/`. The directory is gitignored. Set `TEA_DATA_DIR` to relocate.
+
+No credentials or prompt content are ever written to `./data/`. Scheduler run history stores only metadata and a short, safe summary per source.
+
+## Daily sync via cron (optional)
+
+```bash
+# crontab -e
+0 8 * * *  cd /path/to/mkt101 && /path/to/venv/bin/python -m scripts.run_sync >> /tmp/mkt101_sync.log 2>&1
+```
+
+The runner reads `ANTHROPIC_API_KEY` exactly like the app (env / `.env` / Streamlit secrets) and writes only metadata to `data/scheduler_history.json`. It never logs the key, prompt content, or URLs with query strings.
 
 ## CLI commands
 

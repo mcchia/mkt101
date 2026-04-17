@@ -86,3 +86,7 @@ scratch/
 tmp/
 *.bak
 *.orig
+
+# --- App local state (JSON persistence, never commit) ---
+data/
+!data/.gitkeep
