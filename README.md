@@ -1,6 +1,8 @@
 # mkt101
 
-AI Marketing Assistant CLI for a middle-to-high-end tea brand. Wraps a structured marketing-assistant spec around the Anthropic SDK so the founder, internal team, or executives can paste in social performance data and get back: clarifying questions (when inputs are thin), performance analysis, 10-15 post ideas, self-critique, top 3 selections, and execution-ready outputs.
+AI Marketing Assistant for a middle-to-high-end tea brand. Wraps a structured marketing-assistant spec around the Anthropic SDK so the founder, internal team, or executives can paste in social performance data and get back: clarifying questions (when inputs are thin), performance analysis, 10-15 post ideas, self-critique, top 3 selections, and execution-ready outputs.
+
+Ships with both a CLI (`tea_assistant.py`) and a Streamlit web UI (`tea_assistant_ui.py`).
 
 ## Setup
 
@@ -9,10 +11,16 @@ Requires Python 3.10+ and an Anthropic API key.
 ```bash
 pip install -r requirements.txt
 export ANTHROPIC_API_KEY=sk-ant-...
-python tea_assistant.py
+
+python tea_assistant.py              # CLI
+streamlit run tea_assistant_ui.py    # Web UI
 ```
 
-## Commands
+## Web UI
+
+`streamlit run tea_assistant_ui.py` opens a chat interface in the browser. Paste multi-line content directly into the message box (Shift+Enter for a new line). The sidebar shows turn count, per-turn token usage, and a reset button.
+
+## CLI commands
 
 | Command  | Purpose                                                          |
 | -------- | ---------------------------------------------------------------- |
