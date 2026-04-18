@@ -66,8 +66,8 @@ def _sched_banner() -> None:
         pass
 
 
-def _page(fn, title: str, icon: str | None = None):
-    return st.Page(fn, title=title, icon=icon)
+def _page(fn, title: str, url_path: str, icon: str | None = None):
+    return st.Page(fn, title=title, url_path=url_path, icon=icon)
 
 
 _sidebar_brand()
@@ -75,20 +75,20 @@ _sidebar_brand()
 nav = st.navigation(
     {
         "Workspace": [
-            _page(chat.render, "Assistant", icon=":material/auto_awesome:"),
-            _page(templates_page.render, "Templates", icon=":material/dashboard_customize:"),
-            _page(seasonal_page.render, "Seasonal Planner", icon=":material/calendar_month:"),
-            _page(ab_testing_page.render, "A/B Testing", icon=":material/compare_arrows:"),
+            _page(chat.render, "Assistant", "assistant", icon=":material/auto_awesome:"),
+            _page(templates_page.render, "Templates", "templates", icon=":material/dashboard_customize:"),
+            _page(seasonal_page.render, "Seasonal Planner", "seasonal", icon=":material/calendar_month:"),
+            _page(ab_testing_page.render, "A/B Testing", "ab-testing", icon=":material/compare_arrows:"),
         ],
         "Knowledge": [
-            _page(brand_memory_page.render, "Brand Memory", icon=":material/bookmark:"),
-            _page(content_history_page.render, "Content History", icon=":material/history:"),
-            _page(patterns_page.render, "Patterns & Losing Posts", icon=":material/insights:"),
+            _page(brand_memory_page.render, "Brand Memory", "brand-memory", icon=":material/bookmark:"),
+            _page(content_history_page.render, "Content History", "content-history", icon=":material/history:"),
+            _page(patterns_page.render, "Patterns & Losing Posts", "patterns", icon=":material/insights:"),
         ],
         "Protection & ops": [
-            _page(brand_protection_page.render, "Brand Protection", icon=":material/shield:"),
-            _page(competitor_watch_page.render, "Competitor Watch", icon=":material/visibility:"),
-            _page(scheduler_page.render, "Sync Scheduler", icon=":material/schedule:"),
+            _page(brand_protection_page.render, "Brand Protection", "brand-protection", icon=":material/shield:"),
+            _page(competitor_watch_page.render, "Competitor Watch", "competitor-watch", icon=":material/visibility:"),
+            _page(scheduler_page.render, "Sync Scheduler", "scheduler", icon=":material/schedule:"),
         ],
     }
 )
